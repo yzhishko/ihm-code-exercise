@@ -1,0 +1,1 @@
+CREATE TABLE advertiser(id INT auto_increment, name VARCHAR(255) UNIQUE, contact_name VARCHAR(255), credit_limit DECIMAL(20,2));
