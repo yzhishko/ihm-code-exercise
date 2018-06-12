@@ -1,6 +1,8 @@
 package com.code.api.advertise;
 
 import com.code.api.advertise.controller.AdvertiserController;
+import com.code.api.advertise.exception.AdvertiserAlreadyExistsException;
+import com.code.api.advertise.exception.AdvertiserNotFoundException;
 import com.code.api.advertise.model.Advertiser;
 import com.code.api.advertise.model.TransactionValidity;
 import org.junit.Test;
@@ -90,13 +92,75 @@ public class AdvertiseApplicationTests {
     }
 
     @Test
-    public void testHasEnoughcredit() {
+    public void testHasEnoughCredit() {
         TransactionValidity expectedValidity = new TransactionValidity();
         expectedValidity.setValid(true);
         expectedValidity.setAmount(new BigDecimal("1.00"));
-	    TransactionValidity actualValidity = advertiserController.hasEnoughCredit(2L, new BigDecimal("1.00"));
+	    TransactionValidity actualValidity = advertiserController.checkTransaction(2L, new BigDecimal("1.00"));
         assertEquals(expectedValidity.hashCode(), actualValidity.hashCode());
         assertEquals(expectedValidity, actualValidity);
     }
+
+    @Test
+    public void testAdvertiserExistsOnAdd() {
+        Advertiser expAdv = new Advertiser();
+        expAdv.setContactName("Unknow");
+        expAdv.setName("Amazon");
+        expAdv.setCreditLimit(new BigDecimal("00.00"));
+        AdvertiserAlreadyExistsException ex = null;
+        try{
+            advertiserController.addAdvertiser(expAdv);
+        } catch (AdvertiserAlreadyExistsException e) {
+            ex = e;
+        }
+        assertNotNull("Should fail with AdvertiserAlreadyExistsException",ex);
+    }
+
+    @Test
+    public void testAdvertiserExistsOnUpdate() {
+        Advertiser expAdv = new Advertiser();
+        expAdv.setContactName("Unknown");
+        expAdv.setName("Amazon");
+        expAdv.setCreditLimit(new BigDecimal("00.00"));
+        AdvertiserAlreadyExistsException ex = null;
+        try{
+            advertiserController.updateAdvertiser(1L, expAdv);
+        } catch (AdvertiserAlreadyExistsException e) {
+            ex = e;
+        }
+        assertNotNull("Should fail with AdvertiserAlreadyExistsException", ex);
+    }
+
+    @Test
+    public void testAdvertiserNotFoundOnUpdate() {
+        Advertiser expAdv = new Advertiser();
+        expAdv.setContactName("Unknown");
+        expAdv.setName("Amazon");
+        expAdv.setCreditLimit(new BigDecimal("00.00"));
+        AdvertiserNotFoundException ex = null;
+        try{
+            advertiserController.updateAdvertiser(10L, expAdv);
+        } catch (AdvertiserNotFoundException e) {
+            ex = e;
+        }
+        assertNotNull("Should fail with AdvertiserNotFoundException", ex);
+    }
+
+    @Test
+    public void testAdvertiserNotFoundOnCheckTransaction() {
+        AdvertiserNotFoundException ex = null;
+        try{
+            advertiserController.checkTransaction(10L, new BigDecimal(300));
+        } catch (AdvertiserNotFoundException e) {
+            ex = e;
+        }
+        assertNotNull("Should fail with AdvertiserNotFoundException", ex);
+    }
+
+    @Test
+    public void testMain(){
+        AdvertiseApplication.main(new String[]{});
+    }
+
 
 }
