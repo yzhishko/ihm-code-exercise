@@ -4,7 +4,9 @@ import com.code.api.advertise.model.Advertiser;
 import com.code.api.advertise.model.TransactionValidity;
 import com.code.api.advertise.service.AdvertiserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,41 +25,44 @@ public class AdvertiserController {
     @Autowired
     private AdvertiserService advertiserService;
 
-    @GetMapping("/advertisers")
+    @GetMapping(value = "/advertisers", produces = MediaType.APPLICATION_JSON_VALUE)
     public Collection<Advertiser> findAllAdvertisers() {
         return advertiserService.findAllAdvertisers();
     }
 
-    @GetMapping("/advertisers/{id}")
+    @GetMapping(value = "/advertisers/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public Advertiser findAdvertiserById(@PathVariable("id") @Positive Long id) {
         return advertiserService.findAdvertiserById(id);
     }
 
-    @GetMapping("/query/advertisers")
+    @GetMapping(value = "/query/advertisers", produces = MediaType.APPLICATION_JSON_VALUE)
     public Advertiser findAdvertiserByName(@RequestParam String name) {
         return advertiserService.findAdvertiserByName(name);
     }
 
-    @PostMapping(value = "/advertisers", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public void addAdvertiser(@Valid @RequestBody Advertiser advertiser) {
+    @PostMapping(value = "/advertisers", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity addAdvertiser(@Valid @RequestBody Advertiser advertiser) {
         advertiserService.addAdvertiser(advertiser);
+        return new ResponseEntity<>("{\"status\":\"OK\"}", HttpStatus.OK);
     }
 
-    @PutMapping("/advertisers/{id}")
-    public void updateAdvertiser(@PathVariable("id") @Positive Long id,
-                                 @Valid @RequestBody Advertiser advertiser) {
+    @PutMapping(value = "/advertisers/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity updateAdvertiser(@PathVariable("id") @Positive Long id,
+                                           @Valid @RequestBody Advertiser advertiser) {
         advertiserService.updateAdvertiser(id, advertiser);
+        return new ResponseEntity<>("{\"status\":\"OK\"}", HttpStatus.OK);
     }
 
-    @RequestMapping(value = "/advertisers/{id}/check_transaction", method = RequestMethod.GET)
+    @GetMapping(value = "/advertisers/{id}/check_transaction", produces = MediaType.APPLICATION_JSON_VALUE)
     public TransactionValidity checkTransaction(@PathVariable("id") @Positive Long id,
                                                @RequestParam @PositiveOrZero @Digits(integer = 20, fraction = 2) BigDecimal order) {
         return advertiserService.hasEnoughCredit(id, order);
     }
 
-    @DeleteMapping("/advertisers/{id}")
-    public void deleteById(@PathVariable("id") @Positive Long id) {
+    @DeleteMapping(value = "/advertisers/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity deleteAdvertiserById(@PathVariable("id") @Positive Long id) {
         advertiserService.deleteAdvertiserById(id);
+        return new ResponseEntity<>("{\"status\":\"OK\"}", HttpStatus.OK);
     }
 
 }

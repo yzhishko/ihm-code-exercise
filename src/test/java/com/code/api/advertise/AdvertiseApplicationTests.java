@@ -69,7 +69,7 @@ public class AdvertiseApplicationTests {
         Advertiser advertiser = advertiserController.findAdvertiserById(4L);
         assertEquals(expAdv.hashCode(), advertiser.hashCode());
         assertEquals(expAdv, advertiser);
-        advertiserController.deleteById(4L);
+        advertiserController.deleteAdvertiserById(4L);
         advertisers = advertiserController.findAllAdvertisers();
         assertNotNull(advertisers);
         assertEquals(3, advertisers.size());
