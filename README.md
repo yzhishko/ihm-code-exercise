@@ -27,7 +27,7 @@ After that DB access point will be available at <http://localhost:1521>.
 Running
 -
 
-###docker run
+### docker run
 
 - clones repository
 - performs build
@@ -41,7 +41,7 @@ cd ihm-code-exercise
 docker run -p 8080:8080 -p 8090:8090 --net host -t com.code.api/advertise
 ```
 
-###test
+### test
 
 ```bash
 ./gradlew clean test jacocoTestReport
@@ -57,7 +57,7 @@ After application is up and running Swagger UI is available at <http://localhost
 <br/>
 Contains the description of all endpoints to access.
 
-###Actuator
+### Actuator
 
 Available at <http://localhost:8090/actuator>
 <br/>
