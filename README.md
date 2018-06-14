@@ -40,6 +40,26 @@ cd ihm-code-exercise
 ./gradlew build docker
 docker run -p 8080:8080 -p 8090:8090 --net host -t com.code.api/advertise
 ```
+### External configuration
+
+#### Single properties
+If H2 data location is different from localhost:1521/opt/h2-data. Run with the following command:
+```bash
+docker run -p 8080:8080 -p 8090:8090 --net host -t com.code.api/advertise --spring.datasource.url=jdbc:h2:tcp://h2_host:h2_port/h2_data
+```
+You may use:
+```bash
+--spring.datasource.username
+--spring.datasource.password
+```
+properties to change user name and password in the same way.
+
+#### Configuration file
+There is a way to attach external configuration file. Assume that config.properties is located in /home/user/configs folder on your local machine:
+
+```bash
+docker run -p 8080:8080 -p 8090:8090 -v /home/user/configs:/etc/config --net host -t com.code.api/advertise --spring.config.location=/etc/config/config.properties
+```
 
 ### test
 
