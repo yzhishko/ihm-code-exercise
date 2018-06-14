@@ -1,6 +1,7 @@
 package com.code.api.advertise.controller;
 
 import com.code.api.advertise.model.Advertiser;
+import com.code.api.advertise.model.Deduction;
 import com.code.api.advertise.model.TransactionValidity;
 import com.code.api.advertise.service.AdvertiserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,6 +64,11 @@ public class AdvertiserController {
     public ResponseEntity deleteAdvertiserById(@PathVariable("id") @Positive Long id) {
         advertiserService.deleteAdvertiserById(id);
         return new ResponseEntity<>("{\"status\":\"OK\"}", HttpStatus.OK);
+    }
+
+    @PostMapping(value = "/advertisers/{id}/deduct", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public Advertiser deductAmountFromCredit(@PathVariable("id") @Positive Long id, @Valid @RequestBody Deduction deduction) {
+        return advertiserService.deductAmount(id, deduction.getAmount());
     }
 
 }

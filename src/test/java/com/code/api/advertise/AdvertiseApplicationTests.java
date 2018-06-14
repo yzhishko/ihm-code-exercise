@@ -3,13 +3,19 @@ package com.code.api.advertise;
 import com.code.api.advertise.controller.AdvertiserController;
 import com.code.api.advertise.exception.AdvertiserAlreadyExistsException;
 import com.code.api.advertise.exception.AdvertiserNotFoundException;
+import com.code.api.advertise.exception.NotEnoughCreditException;
 import com.code.api.advertise.model.Advertiser;
+import com.code.api.advertise.model.Deduction;
 import com.code.api.advertise.model.TransactionValidity;
+import org.flywaydb.test.FlywayTestExecutionListener;
+import org.flywaydb.test.annotation.FlywayTest;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 
 import java.math.BigDecimal;
 import java.util.Collection;
@@ -18,6 +24,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(SpringRunner.class)
+@TestExecutionListeners({DependencyInjectionTestExecutionListener.class,
+        FlywayTestExecutionListener.class })
 @SpringBootTest
 public class AdvertiseApplicationTests {
 
@@ -25,13 +33,15 @@ public class AdvertiseApplicationTests {
     private AdvertiserController advertiserController;
 
 	@Test
-	public void testSelectAllAdvertisers() {
+    @FlywayTest
+    public void testSelectAllAdvertisers() {
         Collection<Advertiser> advertisers = advertiserController.findAllAdvertisers();
         assertNotNull(advertisers);
         assertEquals(3, advertisers.size());
     }
 
     @Test
+    @FlywayTest
     public void testSelectAdvertiser() {
         Advertiser advertiser = advertiserController.findAdvertiserById(1L);
         Advertiser expAdv = new Advertiser();
@@ -44,6 +54,7 @@ public class AdvertiseApplicationTests {
     }
 
     @Test
+    @FlywayTest
     public void testFindByName() {
         Advertiser advertiser = advertiserController.findAdvertiserByName("Amazon");
         Advertiser expAdv = new Advertiser();
@@ -56,6 +67,7 @@ public class AdvertiseApplicationTests {
     }
 
     @Test
+    @FlywayTest
     public void testAddDeleteAdvertiser() {
         Advertiser expAdv = new Advertiser();
         expAdv.setContactName("Unknown");
@@ -76,6 +88,7 @@ public class AdvertiseApplicationTests {
     }
 
     @Test
+    @FlywayTest
     public void testUpdateAdvertiser() {
         Advertiser expAdv = new Advertiser();
         expAdv.setContactName("Jackson");
@@ -92,6 +105,7 @@ public class AdvertiseApplicationTests {
     }
 
     @Test
+    @FlywayTest
     public void testHasEnoughCredit() {
         TransactionValidity expectedValidity = new TransactionValidity();
         expectedValidity.setValid(true);
@@ -102,6 +116,7 @@ public class AdvertiseApplicationTests {
     }
 
     @Test
+    @FlywayTest
     public void testAdvertiserExistsOnAdd() {
         Advertiser expAdv = new Advertiser();
         expAdv.setContactName("Unknow");
@@ -117,6 +132,7 @@ public class AdvertiseApplicationTests {
     }
 
     @Test
+    @FlywayTest
     public void testAdvertiserExistsOnUpdate() {
         Advertiser expAdv = new Advertiser();
         expAdv.setContactName("Unknown");
@@ -132,6 +148,7 @@ public class AdvertiseApplicationTests {
     }
 
     @Test
+    @FlywayTest
     public void testAdvertiserNotFoundOnUpdate() {
         Advertiser expAdv = new Advertiser();
         expAdv.setContactName("Unknown");
@@ -147,6 +164,7 @@ public class AdvertiseApplicationTests {
     }
 
     @Test
+    @FlywayTest
     public void testAdvertiserNotFoundOnCheckTransaction() {
         AdvertiserNotFoundException ex = null;
         try{
@@ -155,6 +173,43 @@ public class AdvertiseApplicationTests {
             ex = e;
         }
         assertNotNull("Should fail with AdvertiserNotFoundException", ex);
+    }
+
+    @Test
+    @FlywayTest
+    public void testDeductAmountFromCreditNotFound() {
+	    AdvertiserNotFoundException ex = null;
+	    try {
+            Deduction deduction = new Deduction();
+            deduction.setAmount(new BigDecimal("30.00"));
+            advertiserController.deductAmountFromCredit(30L, deduction);
+        } catch (AdvertiserNotFoundException e) {
+	        ex = e;
+        }
+        assertNotNull("Should fail with AdvertiserNotFoundException", ex);
+    }
+
+    @Test
+    @FlywayTest
+    public void testDeductAmountFromCreditNotEnoughCredit() {
+        NotEnoughCreditException ex = null;
+        try {
+            Deduction deduction = new Deduction();
+            deduction.setAmount(new BigDecimal("4000.00"));
+            advertiserController.deductAmountFromCredit(2L, deduction);
+        } catch (NotEnoughCreditException e) {
+            ex = e;
+        }
+        assertNotNull("Should fail with NotEnoughCreditException", ex);
+    }
+
+    @Test
+    @FlywayTest
+    public void testDeductAmountFromCredit() {
+        Deduction deduction = new Deduction();
+        deduction.setAmount(new BigDecimal("3000.00"));
+        Advertiser advertiser = advertiserController.deductAmountFromCredit(2L, deduction);
+        assertEquals(new BigDecimal("50.00") ,advertiser.getCreditLimit());
     }
 
     @Test
