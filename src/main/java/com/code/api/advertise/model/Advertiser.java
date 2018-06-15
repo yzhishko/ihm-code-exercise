@@ -1,6 +1,7 @@
 package com.code.api.advertise.model;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,6 +27,7 @@ public @Data class Advertiser {
     @PositiveOrZero
     @Getter @Setter private BigDecimal creditLimit;
 
+    @JsonIgnore
     @Getter @Setter private Long version;
 
 }
