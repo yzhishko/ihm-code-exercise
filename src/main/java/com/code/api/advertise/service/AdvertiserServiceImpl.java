@@ -9,7 +9,9 @@ import com.code.api.advertise.model.TransactionValidity;
 import org.apache.ibatis.type.MappedTypes;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Collection;
@@ -17,6 +19,7 @@ import java.util.Collection;
 @Component
 @MappedTypes({Advertiser.class, TransactionValidity.class})
 @MapperScan("com.code.api.advertise.mapper")
+@Transactional(readOnly = true)
 public class AdvertiserServiceImpl implements AdvertiserService {
 
     @Autowired
@@ -26,15 +29,18 @@ public class AdvertiserServiceImpl implements AdvertiserService {
         return advertiserMapper.findAll();
     }
 
-    public void addAdvertiser(Advertiser advertiser) {
-        Advertiser adv = findAdvertiserByName(advertiser.getName());
-        if (adv != null) throw new AdvertiserAlreadyExistsException("Found advertiser with the same name and id = " + adv.getId());
+    @Transactional
+    public Advertiser addAdvertiser(Advertiser advertiser) {
         try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-
+            advertiserMapper.addAdvertiser(advertiser);
+        } catch (Exception e) {
+            if (e.getMessage().contains("Unique index or primary key violation")) {
+                throw new AdvertiserAlreadyExistsException("Found advertiser with the same name = "
+                        + advertiser.getName());
+            }
+            throw e;
         }
-        advertiserMapper.addAdvertiser(advertiser);
+        return advertiser;
     }
 
     public Advertiser findAdvertiserById(Long id) {
@@ -45,43 +51,44 @@ public class AdvertiserServiceImpl implements AdvertiserService {
         return advertiserMapper.findAdvertiserByName(name);
     }
 
-    public void updateAdvertiser(Long id, Advertiser advertiser) {
-        Advertiser adv = advertiserMapper.findAdvertiserByID(id);
-        if (adv == null) throw new AdvertiserNotFoundException("Advertiser with id = " + id);
-        adv = findAdvertiserByName(advertiser.getName());
-        if (adv != null) throw new AdvertiserAlreadyExistsException("Found advertiser with the same name and id = " + adv.getId());
+    @Transactional
+    public Advertiser updateAdvertiser(Long id, Advertiser advertiser, Advertiser existAdv) {
+        if (existAdv == null) throw new AdvertiserNotFoundException("Advertiser with id = " + id);
         advertiser.setId(id);
+        advertiser.setVersion(existAdv.getVersion());
         try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-
+            if (advertiserMapper.updateAdvertiser(advertiser)) {
+                return advertiser;
+            } else {
+                throw new ConcurrencyFailureException("Someone have just updated this record. Try again");
+            }
+        } catch (Exception e) {
+            if (e.getMessage().contains("Unique index or primary key violation")) {
+                throw new AdvertiserAlreadyExistsException("Found advertiser with the same name = " + advertiser.getName());
+            }
+            throw e;
         }
-        advertiserMapper.updateAdvertiser(advertiser);
     }
 
     public TransactionValidity hasEnoughCredit(Long id, BigDecimal order) {
-        Advertiser adv = advertiserMapper.findAdvertiserByID(id);
-        if (adv == null) throw new AdvertiserNotFoundException("Advertiser with id = " + id);
-        return advertiserMapper.hasEnoughCreditById(id, order);
+        TransactionValidity validity = advertiserMapper.hasEnoughCreditById(id, order);
+        if (validity == null) throw new AdvertiserNotFoundException("Advertiser with id = " + id);
+        return validity;
     }
 
+    @Transactional
     public void deleteAdvertiserById(Long id) {
         advertiserMapper.deleteAdvertiserbyId(id);
     }
 
-    public Advertiser deductAmount(Long id, BigDecimal amount) {
-        Advertiser advertiser = findAdvertiserById(id);
+    @Transactional
+    public Advertiser deductAmount(Long id, BigDecimal amount, Advertiser advertiser) {
         if (advertiser == null) throw new AdvertiserNotFoundException("Advertiser with id = " + id);
         if (advertiser.getCreditLimit().compareTo(amount) < 0) {
             throw new NotEnoughCreditException("Credit limit is " + advertiser.getCreditLimit());
         }
         advertiser.setCreditLimit(advertiser.getCreditLimit().subtract(amount));
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-
-        }
-        advertiserMapper.updateAdvertiser(advertiser);
+        updateAdvertiser(id, advertiser, advertiser);
         return advertiser;
     }
 

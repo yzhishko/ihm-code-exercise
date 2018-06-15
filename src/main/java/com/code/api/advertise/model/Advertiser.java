@@ -26,4 +26,6 @@ public @Data class Advertiser {
     @PositiveOrZero
     @Getter @Setter private BigDecimal creditLimit;
 
+    @Getter @Setter private Long version;
+
 }

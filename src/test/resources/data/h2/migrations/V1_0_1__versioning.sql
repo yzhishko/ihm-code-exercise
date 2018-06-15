@@ -1,0 +1,1 @@
+ALTER TABLE advertiser ADD version Long DEFAULT 0 NOT NULL;

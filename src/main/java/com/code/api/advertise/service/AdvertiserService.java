@@ -11,18 +11,18 @@ public interface AdvertiserService {
 
     Collection<Advertiser> findAllAdvertisers();
 
-    void addAdvertiser(Advertiser advertiser);
+    Advertiser addAdvertiser(Advertiser advertiser);
 
     Advertiser findAdvertiserById(Long id);
 
     Advertiser findAdvertiserByName(String name);
 
-    void updateAdvertiser(Long id, Advertiser advertiser);
+    Advertiser updateAdvertiser(Long id, Advertiser advertiser, Advertiser existAdvertiser);
 
     TransactionValidity hasEnoughCredit(Long id, BigDecimal order);
 
     void deleteAdvertiserById(Long id);
 
-    Advertiser deductAmount(Long id, BigDecimal amount);
+    Advertiser deductAmount(Long id, BigDecimal amount, Advertiser advertiser);
 
 }

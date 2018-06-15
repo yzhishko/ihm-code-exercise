@@ -5,9 +5,7 @@ import com.code.api.advertise.model.Deduction;
 import com.code.api.advertise.model.TransactionValidity;
 import com.code.api.advertise.service.AdvertiserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,16 +40,14 @@ public class AdvertiserController {
     }
 
     @PostMapping(value = "/advertisers", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity addAdvertiser(@Valid @RequestBody Advertiser advertiser) {
-        advertiserService.addAdvertiser(advertiser);
-        return new ResponseEntity<>("{\"status\":\"OK\"}", HttpStatus.OK);
+    public Advertiser addAdvertiser(@Valid @RequestBody Advertiser advertiser) {
+        return advertiserService.addAdvertiser(advertiser);
     }
 
     @PutMapping(value = "/advertisers/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity updateAdvertiser(@PathVariable("id") @Positive Long id,
+    public Advertiser updateAdvertiser(@PathVariable("id") @Positive Long id,
                                            @Valid @RequestBody Advertiser advertiser) {
-        advertiserService.updateAdvertiser(id, advertiser);
-        return new ResponseEntity<>("{\"status\":\"OK\"}", HttpStatus.OK);
+        return advertiserService.updateAdvertiser(id, advertiser, advertiserService.findAdvertiserById(id));
     }
 
     @GetMapping(value = "/advertisers/{id}/check_transaction", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -61,14 +57,13 @@ public class AdvertiserController {
     }
 
     @DeleteMapping(value = "/advertisers/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity deleteAdvertiserById(@PathVariable("id") @Positive Long id) {
+    public void deleteAdvertiserById(@PathVariable("id") @Positive Long id) {
         advertiserService.deleteAdvertiserById(id);
-        return new ResponseEntity<>("{\"status\":\"OK\"}", HttpStatus.OK);
     }
 
     @PostMapping(value = "/advertisers/{id}/deduct", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public Advertiser deductAmountFromCredit(@PathVariable("id") @Positive Long id, @Valid @RequestBody Deduction deduction) {
-        return advertiserService.deductAmount(id, deduction.getAmount());
+        return advertiserService.deductAmount(id, deduction.getAmount(), findAdvertiserById(id));
     }
 
 }

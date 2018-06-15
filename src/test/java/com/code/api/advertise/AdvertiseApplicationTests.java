@@ -7,12 +7,14 @@ import com.code.api.advertise.exception.NotEnoughCreditException;
 import com.code.api.advertise.model.Advertiser;
 import com.code.api.advertise.model.Deduction;
 import com.code.api.advertise.model.TransactionValidity;
+import com.code.api.advertise.service.AdvertiserService;
 import org.flywaydb.test.FlywayTestExecutionListener;
 import org.flywaydb.test.annotation.FlywayTest;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
@@ -32,6 +34,9 @@ public class AdvertiseApplicationTests {
     @Autowired
     private AdvertiserController advertiserController;
 
+    @Autowired
+    private AdvertiserService advertiserService;
+
 	@Test
     @FlywayTest
     public void testSelectAllAdvertisers() {
@@ -49,6 +54,7 @@ public class AdvertiseApplicationTests {
         expAdv.setContactName("Yury Zhyshko");
         expAdv.setName("IHeartMedia");
         expAdv.setCreditLimit(new BigDecimal("102330.09"));
+        expAdv.setVersion(0L);
         assertEquals(expAdv.hashCode(), advertiser.hashCode());
         assertEquals(expAdv, advertiser);
     }
@@ -62,6 +68,7 @@ public class AdvertiseApplicationTests {
         expAdv.setContactName("Jeff Bezos");
         expAdv.setName("Amazon");
         expAdv.setCreditLimit(new BigDecimal("3050.00"));
+        expAdv.setVersion(0L);
         assertEquals(expAdv.hashCode(), advertiser.hashCode());
         assertEquals(expAdv, advertiser);
     }
@@ -73,12 +80,12 @@ public class AdvertiseApplicationTests {
         expAdv.setContactName("Unknown");
         expAdv.setName("Yelp");
         expAdv.setCreditLimit(new BigDecimal("00.00"));
-        advertiserController.addAdvertiser(expAdv);
+        Advertiser advertiser = advertiserController.addAdvertiser(expAdv);
         Collection<Advertiser> advertisers = advertiserController.findAllAdvertisers();
         assertNotNull(advertisers);
         assertEquals(4, advertisers.size());
         expAdv.setId(4L);
-        Advertiser advertiser = advertiserController.findAdvertiserById(4L);
+        expAdv.setVersion(0L);
         assertEquals(expAdv.hashCode(), advertiser.hashCode());
         assertEquals(expAdv, advertiser);
         advertiserController.deleteAdvertiserById(4L);
@@ -94,12 +101,9 @@ public class AdvertiseApplicationTests {
         expAdv.setContactName("Jackson");
         expAdv.setName("M&M");
         expAdv.setCreditLimit(new BigDecimal("1.00"));
-        advertiserController.updateAdvertiser(1L, expAdv);
+        Advertiser advertiser = advertiserController.updateAdvertiser(1L, expAdv);
         expAdv.setId(1L);
-        Collection<Advertiser> advertisers = advertiserController.findAllAdvertisers();
-        assertNotNull(advertisers);
-        assertEquals(3, advertisers.size());
-        Advertiser advertiser = advertiserController.findAdvertiserById(1L);
+        expAdv.setVersion(1L);
         assertEquals(expAdv.hashCode(), advertiser.hashCode());
         assertEquals(expAdv, advertiser);
     }
@@ -210,6 +214,39 @@ public class AdvertiseApplicationTests {
         deduction.setAmount(new BigDecimal("3000.00"));
         Advertiser advertiser = advertiserController.deductAmountFromCredit(2L, deduction);
         assertEquals(new BigDecimal("50.00") ,advertiser.getCreditLimit());
+    }
+
+    @Test
+    @FlywayTest
+    public void testUpdateConcurrently(){
+        Advertiser expAdv = new Advertiser();
+        expAdv.setContactName("Jackson");
+        expAdv.setName("M&M");
+        expAdv.setCreditLimit(new BigDecimal("1.00"));
+        expAdv.setId(1L);
+        expAdv.setVersion(0L);
+        advertiserService.updateAdvertiser(1L, expAdv, expAdv);
+        ConcurrencyFailureException ex = null;
+        try{
+            advertiserService.updateAdvertiser(1L, expAdv, expAdv);
+        } catch (ConcurrencyFailureException e) {
+            ex = e;
+        }
+        assertNotNull(ex);
+    }
+
+    @Test
+    @FlywayTest
+    public void testDeductAmountFromCreditConcurrently() {
+        Advertiser advertiser = advertiserController.findAdvertiserById(2L);
+        advertiserService.deductAmount(2L, new BigDecimal("1.00"), advertiser);
+        ConcurrencyFailureException ex = null;
+        try{
+            advertiserService.deductAmount(2L, new BigDecimal("1.00"), advertiser);
+        } catch (ConcurrencyFailureException e) {
+            ex = e;
+        }
+        assertNotNull(ex);
     }
 
     @Test

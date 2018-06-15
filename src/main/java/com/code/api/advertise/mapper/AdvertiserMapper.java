@@ -14,7 +14,7 @@ public interface AdvertiserMapper {
     List<Advertiser> findAll();
 
     @Insert("insert into advertiser(name, contactName, creditLimit) values(#{name}, #{contactName}, #{creditLimit})")
-    @SelectKey(statement="call identity()", keyProperty="id",
+    @SelectKey(statement="SELECT SCOPE_IDENTITY()", keyProperty="id",
             before=false, resultType=Long.class)
     void addAdvertiser(Advertiser advertiser);
 
@@ -24,8 +24,9 @@ public interface AdvertiserMapper {
     @Select("select * from advertiser where name = #{name}")
     Advertiser findAdvertiserByName(String name);
 
-    @Update("update advertiser set name = #{name}, contactName = #{contactName}, creditLimit = #{creditLimit} where id = #{id}")
-    void updateAdvertiser(Advertiser advertiser);
+    @Update("update advertiser set name = #{name}, contactName = #{contactName}, creditLimit = #{creditLimit}, version = version + 1 " +
+            "where id = #{id} and version = #{version}")
+    boolean updateAdvertiser(Advertiser advertiser);
 
     @Select("select #{order} as amount, case when creditLimit >= #{order} then TRUE else FALSE end as valid from advertiser where id = #{id}")
     TransactionValidity hasEnoughCreditById(@Param("id") Long id, @Param("order") BigDecimal order);
